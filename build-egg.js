@@ -98,7 +98,6 @@ const egg = {
     v('RustEdit Extension', 'Oxide.Ext.RustEdit, needed by many RustEdit custom maps. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'RUSTEDIT_EXT', '0', 'required|boolean'),
     v('ChaosCode Extension', 'Oxide.Ext.Chaos, used by ChaosCode plugins. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'CHAOS_EXT', '0', 'required|boolean'),
     v('Require TPM + Secure Boot', 'Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.', 'REQUIRE_TPM_SECURE_BOOT', '0', 'required|boolean'),
-    v('Log File', 'Also write the server log to logs/<date>.log. While on, the console only shows output after RCON connects. 1 = on, 0 = off.', 'LOG_FILE', '0', 'required|boolean'),
 
     v('Query Port', 'Server Query Port. Can\'t be the same as Game\'s primary port.', 'QUERY_PORT', '27017', 'required|integer', false),
     v('RCON Port', 'Port for RCON connections.', 'RCON_PORT', '28016', 'required|integer', false),

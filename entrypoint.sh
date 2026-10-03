@@ -299,11 +299,6 @@ done
 MODIFIED_STARTUP=$(eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g'))
 set +f
 
-if [ "${LOG_FILE}" = "1" ]; then
-    mkdir -p logs
-    MODIFIED_STARTUP="${MODIFIED_STARTUP} -logfile logs/$(date +%Y-%m-%d_%H%M%S).log"
-fi
-
 # Carbon's own launch setup (doorstop, LD_PRELOAD, library path). wrapper.js runs this in bash.
 if [ "${FRAMEWORK}" = "carbon" ]; then
     MODIFIED_STARTUP=". ./carbon/tools/environment.sh && ${MODIFIED_STARTUP}"

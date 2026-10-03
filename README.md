@@ -21,7 +21,6 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
   Turning a toggle off removes that DLL on the next start. A failed download keeps the installed copy, and any file that is not a real DLL is rejected.
 - **FPS Limit** variable, passed as `+fps.limit`.
 - **Require TPM + Secure Boot** toggle (`server.useServerWideRequiredSystemConfig`).
-- **Optional log file** in `logs/`.
 - **Console filter** for Unity boot noise, line by line.
 - **Wrapper:** streams game output (no buffer limit), reconnects when RCON drops instead of killing the server, and saves on SIGTERM.
 
