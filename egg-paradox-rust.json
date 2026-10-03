@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-10-03T03:43:20+00:00",
+    "exported_at": "2026-10-03T04:01:59+00:00",
     "name": "Rust (Paradox)",
     "author": "support@pterodactyl.io",
     "description": "Rust dedicated server. Supports the public, release, staging and aux branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit, ChaosCode and PreventBlueprintWipes downloads.",
@@ -15,7 +15,7 @@
         "Paradox Rust": "ghcr.io/paradoxlabs-llc/rustegg:latest"
     },
     "file_denylist": [],
-    "startup": "./RustDedicated -batchmode +server.port {{SERVER_PORT}} +server.queryport {{QUERY_PORT}} +server.identity \\\"{{SERVER_IDENTITY}}\\\" +rcon.port {{RCON_PORT}} +rcon.web true +rcon.password \\\"{{RCON_PASS}}\\\" +server.hostname \\\"{{HOSTNAME}}\\\" +server.level \\\"{{LEVEL}}\\\" +server.description \\\"{{DESCRIPTION}}\\\" +server.url \\\"{{SERVER_URL}}\\\" +server.headerimage \\\"{{SERVER_IMG}}\\\" +server.logoimage \\\"{{SERVER_LOGO}}\\\" +server.maxplayers {{MAX_PLAYERS}} +server.saveinterval {{SAVEINTERVAL}} +app.port {{APP_PORT}} +fps.limit {{FPS_LIMIT}} $( [ -n \"${APP_PUBLIC_IP}\" ] && printf %s \"+app.publicip ${APP_PUBLIC_IP}\" ) $( [ -n \"${SERVER_TAGS}\" ] && printf %s \"+server.tags \\\"${SERVER_TAGS}\\\"\" ) $( [ -n \"${GAMEMODE}\" ] && printf %s \"+server.gamemode ${GAMEMODE}\" ) $( [ -z ${MAP_URL} ] && printf %s \"+server.worldsize \\\"{{WORLD_SIZE}}\\\" +server.seed \\\"{{WORLD_SEED}}\\\"\" || printf %s \"+server.levelurl {{MAP_URL}}\" ) {{ADDITIONAL_ARGS}}",
+    "startup": "./RustDedicated -batchmode +server.port {{SERVER_PORT}} +server.queryport {{QUERY_PORT}} +server.identity \\\"{{SERVER_IDENTITY}}\\\" +rcon.port {{RCON_PORT}} +rcon.web true +rcon.password \\\"{{RCON_PASS}}\\\" +server.hostname \\\"{{HOSTNAME}}\\\" +server.level \\\"{{LEVEL}}\\\" +server.description \\\"{{DESCRIPTION}}\\\" +server.url \\\"{{SERVER_URL}}\\\" +server.headerimage \\\"{{SERVER_IMG}}\\\" +server.logoimage \\\"{{SERVER_LOGO}}\\\" +server.maxplayers {{MAX_PLAYERS}} +server.saveinterval {{SAVEINTERVAL}} +app.port {{APP_PORT}} +fps.limit {{FPS_LIMIT}} $( [ \"${REQUIRE_TPM_SECURE_BOOT}\" = \"1\" ] && printf %s \"+server.useServerWideRequiredSystemConfig true\" ) $( [ -n \"${APP_PUBLIC_IP}\" ] && printf %s \"+app.publicip ${APP_PUBLIC_IP}\" ) $( [ -n \"${SERVER_TAGS}\" ] && printf %s \"+server.tags \\\"${SERVER_TAGS}\\\"\" ) $( [ -n \"${GAMEMODE}\" ] && printf %s \"+server.gamemode ${GAMEMODE}\" ) $( [ -z \"${MAP_URL}\" ] && printf %s \"+server.worldsize \\\"{{WORLD_SIZE}}\\\" +server.seed \\\"{{WORLD_SEED}}\\\"\" || printf %s \"+server.levelurl \\\"{{MAP_URL}}\\\"\" ) {{ADDITIONAL_ARGS}}",
     "config": {
         "files": "{}",
         "startup": "{\r\n    \"done\": \"Server startup complete\"\r\n}",
@@ -24,7 +24,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\n# SteamCMD install for Rust. Server files: /mnt/server\nSRCDS_APPID=258550\n\ncd /tmp\nmkdir -p /mnt/server/steamcmd /mnt/server/steamapps\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzf steamcmd.tar.gz -C /mnt/server/steamcmd\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise, even as root. Ownership is fixed after install.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\nBETA_ARGS=\"\"\nif [ -n \"${BRANCH}\" ] && [ \"${BRANCH}\" != \"public\" ]; then\n    BETA_ARGS=\"-beta ${BRANCH}\"\nfi\n\n./steamcmd.sh +force_install_dir /mnt/server +login anonymous +app_update ${SRCDS_APPID} ${BETA_ARGS} validate +quit\n\nmkdir -p /mnt/server/.steam/sdk32 /mnt/server/.steam/sdk64\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n# Remember the installed branch so the first start does not re-validate.\nprintf 'branch=%s\\n' \"${BRANCH:-public}\" > /mnt/server/.egg_state\necho \"Install complete.\"",
+            "script": "#!/bin/bash\n# SteamCMD install for Rust. Server files: /mnt/server\nSRCDS_APPID=258550\n\ncd /tmp\nmkdir -p /mnt/server/steamcmd /mnt/server/steamapps\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzf steamcmd.tar.gz -C /mnt/server/steamcmd\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise, even as root. Ownership is fixed after install.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\nBETA_ARGS=\"\"\nif [ -n \"${BRANCH}\" ] && [ \"${BRANCH}\" != \"public\" ]; then\n    BETA_ARGS=\"-beta ${BRANCH}\"\nfi\n\n# Warm up SteamCMD first; its first run often fails with \"Missing configuration\".\n./steamcmd.sh +login anonymous +quit || true\n\n./steamcmd.sh +force_install_dir /mnt/server +login anonymous +app_update ${SRCDS_APPID} ${BETA_ARGS} validate +quit\n\nmkdir -p /mnt/server/.steam/sdk32 /mnt/server/.steam/sdk64\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n# Keep panel backups small: back up saves, plugins and mods, not game files.\nif [ ! -f /mnt/server/.pteroignore ]; then\n    printf \"%s\\n\" \"*\" \"!server\" \"!oxide\" \"!carbon\" \"!HarmonyMods\" \"!.egg_state\" > /mnt/server/.pteroignore\nfi\n\n# Remember the installed branch so the first start does not re-validate.\nprintf 'branch=%s\\n' \"${BRANCH:-public}\" > /mnt/server/.egg_state\necho \"Install complete.\"",
             "container": "ghcr.io/pterodactyl/installers:debian",
             "entrypoint": "bash"
         }
@@ -44,7 +44,7 @@
             "name": "Description",
             "description": "The description under your server title. Commonly used for rules & info. Use \\n for newlines.",
             "env_variable": "DESCRIPTION",
-            "default_value": "Powered by Pterodactyl",
+            "default_value": "A Rust server",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
@@ -54,7 +54,7 @@
             "name": "URL",
             "description": "The URL for your server. This is what comes up when clicking the \"Visit Website\" button.",
             "env_variable": "SERVER_URL",
-            "default_value": "http://pterodactyl.io",
+            "default_value": "",
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|url",
@@ -92,12 +92,12 @@
         },
         {
             "name": "Gamemode",
-            "description": "Rust gamemode: vanilla, survival, softcore or hardcore. Leave blank for the game default.",
+            "description": "Rust gamemode: vanilla, survival, softcore, hardcore, weapontest or primitive. Leave blank for the game default.",
             "env_variable": "GAMEMODE",
             "default_value": "vanilla",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "nullable|in:vanilla,survival,softcore,hardcore",
+            "rules": "nullable|in:vanilla,survival,softcore,hardcore,weapontest,primitive",
             "field_type": "text"
         },
         {
@@ -192,7 +192,7 @@
         },
         {
             "name": "Branch",
-            "description": "Rust game branch: public (normal), release, staging, aux01, aux02 or aux03. Oxide supports public, release and staging only. Carbon supports all. Changing branch re-validates the game on the next start. Saves may not carry over between branches.",
+            "description": "Rust game branch: public (normal), release, staging, aux01, aux02 or aux03. aux branches only exist while Facepunch runs them; if Steam has no such branch the update fails and the server will not start until you pick another. Oxide supports public, release and staging only. Carbon supports all. Changing branch re-validates the game on the next start. Saves may not carry over between branches.",
             "env_variable": "BRANCH",
             "default_value": "public",
             "user_viewable": true,
@@ -232,7 +232,7 @@
         },
         {
             "name": "Framework Update",
-            "description": "Download the latest Oxide/Carbon on every start. 1 = on, 0 = keep the installed version.",
+            "description": "Download the latest Oxide/Carbon on every start. 1 = on, 0 = keep the installed version. On wipe day Oxide can be released before or after the Rust update; if the server crashes after a wipe, set this to 0 until both match.",
             "env_variable": "FRAMEWORK_UPDATE",
             "default_value": "1",
             "user_viewable": true,
@@ -242,7 +242,7 @@
         },
         {
             "name": "Discord Extension",
-            "description": "Oxide.Ext.Discord. 1 = install and keep updated, 0 = remove. Needs oxide or carbon.",
+            "description": "Oxide.Ext.Discord. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.",
             "env_variable": "DISCORD_EXT",
             "default_value": "0",
             "user_viewable": true,
@@ -252,7 +252,7 @@
         },
         {
             "name": "RustEdit Extension",
-            "description": "Oxide.Ext.RustEdit, needed by many RustEdit custom maps. 1 = install and keep updated, 0 = remove. Needs oxide or carbon.",
+            "description": "Oxide.Ext.RustEdit, needed by many RustEdit custom maps. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.",
             "env_variable": "RUSTEDIT_EXT",
             "default_value": "0",
             "user_viewable": true,
@@ -262,7 +262,7 @@
         },
         {
             "name": "ChaosCode Extension",
-            "description": "Oxide.Ext.Chaos, used by ChaosCode plugins. 1 = install and keep updated, 0 = remove. Needs oxide or carbon.",
+            "description": "Oxide.Ext.Chaos, used by ChaosCode plugins. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.",
             "env_variable": "CHAOS_EXT",
             "default_value": "0",
             "user_viewable": true,
@@ -274,6 +274,16 @@
             "name": "Prevent Blueprint Wipes",
             "description": "Installs the Rust.PreventBlueprintWipes Harmony mod so player blueprints survive forced and map wipes. Works on vanilla too. 1 = on, 0 = remove.",
             "env_variable": "PREVENT_BP_WIPES",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Require TPM + Secure Boot",
+            "description": "Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.",
+            "env_variable": "REQUIRE_TPM_SECURE_BOOT",
             "default_value": "0",
             "user_viewable": true,
             "user_editable": true,
@@ -328,6 +338,16 @@
             "user_viewable": true,
             "user_editable": false,
             "rules": "required|integer",
+            "field_type": "text"
+        },
+        {
+            "name": "Egg Debug",
+            "description": "Print every command the startup script runs. For troubleshooting only. 1 = on, 0 = off.",
+            "env_variable": "EGG_DEBUG",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
             "field_type": "text"
         },
         {

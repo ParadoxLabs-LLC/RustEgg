@@ -11,7 +11,10 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
 - **Modding framework:** vanilla, oxide or carbon, with the framework build that matches the branch.
   - Oxide: public, release and staging.
   - Carbon: every branch.
-  - Switching framework re-validates the game and removes the old framework's DLLs. Plugins are **not** moved between `oxide/` and `carbon/`.
+  - Switching framework re-validates the game and removes the old framework's DLLs.
+  - Switching between Oxide and Carbon copies plugins, configs, data and lang across once. Existing files are kept and the old folder is never deleted.
+  - If a required validate fails, the server does not start with mismatched files, and the next start tries again.
+  - Framework Update = 0 pins the last downloaded Oxide, which is reapplied after game updates.
 - **Extensions, downloaded on every start when enabled:**
   - Discord (`Oxide.Ext.Discord`)
   - RustEdit (`Oxide.Ext.RustEdit`)
@@ -20,8 +23,11 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
 
   Turning a toggle off removes that DLL on the next start. A failed download keeps the installed copy, and any file that is not a real DLL is rejected.
 - **FPS Limit** variable, passed as `+fps.limit`.
+- **Require TPM + Secure Boot** toggle (`server.useServerWideRequiredSystemConfig`).
+- **Pine Hosting compatibility:** `SRCDS_BETAID` is accepted as the branch.
 - **Optional log file** in `logs/`.
-- **Console filter** for Unity boot noise.
+- **Console filter** for Unity boot noise, line by line.
+- **Wrapper:** streams game output (no buffer limit), reconnects when RCON drops instead of killing the server, and saves on SIGTERM.
 
 ## Install
 
@@ -44,6 +50,10 @@ To regenerate the egg after changing `build-egg.js`:
 ```bash
 node build-egg.js ghcr.io/paradoxlabs-llc/rustegg:latest
 ```
+
+## Tests
+
+`.github/workflows/test.yml` builds the image and boots a real server the way Wings does: install script in `ghcr.io/pterodactyl/installers:debian`, then the image as uid 988 with a 100 MB `/tmp`. It runs vanilla/public, oxide/public with all extensions, and carbon/staging. Run it from Actions → Test server boot.
 
 ## Notes
 

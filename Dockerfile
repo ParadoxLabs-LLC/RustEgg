@@ -15,9 +15,13 @@ RUN         dpkg --add-architecture i386 \
             && apt-get update \
             && apt-get upgrade -y \
             && apt-get install -y --no-install-recommends \
-                ca-certificates curl unzip tar gzip iproute2 tzdata procps \
+                ca-certificates curl unzip tar gzip iproute2 tzdata procps locales \
                 lib32gcc-s1 lib32stdc++6 libgdiplus libsdl2-2.0-0:i386 \
+            && sed -i 's/^# *en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen \
+            && locale-gen \
             && rm -rf /var/lib/apt/lists/*
+
+ENV         LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 TZ=UTC
 
 # npm refuses to install into /, so ws lives in /opt/wrapper and NODE_PATH points to it.
 RUN         mkdir -p /opt/wrapper \

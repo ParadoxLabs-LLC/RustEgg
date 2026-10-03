@@ -3,7 +3,15 @@
 // panel console to WebRCON. Based on the pterodactyl/yolks games/rust wrapper (MIT).
 
 const fs = require("fs");
-const { exec } = require("child_process");
+const os = require("os");
+const { spawn } = require("child_process");
+
+let WebSocket;
+try {
+	WebSocket = require("ws");
+} catch (e) {
+	WebSocket = require("/opt/wrapper/node_modules/ws");
+}
 
 const startupCmd = process.argv.slice(2).join(" ");
 if (startupCmd.length < 1) {
@@ -31,32 +39,44 @@ const noise = [
 
 const seenPercentage = {};
 
+// Filters line by line, so one noisy line never hides real errors in the same chunk.
 function filter(data) {
-	const str = data.toString();
-	if (noise.some((n) => str.includes(n))) return;
+	const kept = [];
+	for (const line of data.toString().split("\n")) {
+		if (line.length === 0) continue;
+		if (noise.some((n) => line.includes(n))) continue;
 
-	// Rust repeats the same percentage many times, so drop duplicates.
-	if (str.startsWith("Loading Prefab Bundle ")) {
-		const percentage = str.substr("Loading Prefab Bundle ".length);
-		if (seenPercentage[percentage]) return;
-		seenPercentage[percentage] = true;
+		// Rust repeats the same percentage many times, so drop duplicates.
+		if (line.startsWith("Loading Prefab Bundle ")) {
+			const percentage = line.substr("Loading Prefab Bundle ".length);
+			if (seenPercentage[percentage]) continue;
+			seenPercentage[percentage] = true;
+		}
+		kept.push(line);
 	}
-
-	process.stdout.write(str.endsWith("\n") ? str : str + "\n");
+	if (kept.length) process.stdout.write(kept.join("\n") + "\n");
 }
 
 console.log("Starting Rust...");
 
 let exited = false;
-const gameProcess = exec(startupCmd, { maxBuffer: 1024 * 1024 * 64 });
+// spawn streams output. exec() buffers it all and kills the game once maxBuffer fills.
+// bash, so Carbon's environment.sh can be sourced in the startup line.
+const gameProcess = spawn(startupCmd, { shell: fs.existsSync("/bin/bash") ? "/bin/bash" : true });
 gameProcess.stdout.on("data", filter);
 gameProcess.stderr.on("data", filter);
-gameProcess.on("exit", function (code) {
+
+// The container stops only when the game itself stops, never on an RCON drop.
+gameProcess.on("exit", function (code, signal) {
 	exited = true;
 	if (code) {
 		console.log("Main game process exited with code " + code);
 	}
-	process.exit(code || 0);
+	if (signal) {
+		console.log("Main game process killed with signal " + signal);
+	}
+	// A signal kill (for example out of memory) must not look like a clean exit.
+	process.exit(code !== null ? code : signal ? 128 + (os.constants.signals[signal] || 0) : 0);
 });
 
 function initialListener(data) {
@@ -65,6 +85,16 @@ function initialListener(data) {
 		gameProcess.kill("SIGTERM");
 	} else {
 		console.log('Unable to run "' + command + '" because RCON is not connected yet.');
+	}
+}
+
+function rconListener(text) {
+	if (ws && ws.readyState === WebSocket.OPEN) {
+		ws.send(createPacket(text));
+	} else if (text.trim() === "quit") {
+		gameProcess.kill("SIGTERM");
+	} else {
+		console.log("Cannot send command: RCON is reconnecting.");
 	}
 }
 
@@ -79,31 +109,46 @@ process.on("exit", function () {
 });
 
 let waiting = true;
+let ws = null;
+let onRcon = false;
+
+function createPacket(command) {
+	return JSON.stringify({ Identifier: -1, Message: command, Name: "WebRcon" });
+}
+
+// Switch console input/output between the game's own output and WebRCON.
+function useRcon(enable) {
+	if (enable === onRcon) return;
+	onRcon = enable;
+	if (enable) {
+		process.stdin.removeListener("data", initialListener);
+		process.stdin.on("data", rconListener);
+		gameProcess.stdout.removeListener("data", filter);
+		gameProcess.stderr.removeListener("data", filter);
+		// Keep draining game output so a full pipe never blocks the game.
+		gameProcess.stdout.resume();
+		gameProcess.stderr.resume();
+	} else {
+		process.stdin.removeListener("data", rconListener);
+		process.stdin.on("data", initialListener);
+		gameProcess.stdout.on("data", filter);
+		gameProcess.stderr.on("data", filter);
+	}
+}
 
 function poll() {
-	function createPacket(command) {
-		return JSON.stringify({ Identifier: -1, Message: command, Name: "WebRcon" });
-	}
-
-	const serverHostname = process.env.RCON_IP ? process.env.RCON_IP : "localhost";
+	if (exited) return;
+	const serverHostname = process.env.RCON_IP ? process.env.RCON_IP : "127.0.0.1";
 	const serverPort = process.env.RCON_PORT;
 	const serverPassword = process.env.RCON_PASS;
-	const WebSocket = require("ws");
-	const ws = new WebSocket("ws://" + serverHostname + ":" + serverPort + "/" + serverPassword);
+	ws = new WebSocket("ws://" + serverHostname + ":" + serverPort + "/" + serverPassword);
 
 	ws.on("open", function open() {
 		console.log('Connected to RCON. Generating the map now. Please wait until the server status switches to "Running".');
 		waiting = false;
-
 		// Ask for status once so the console shows output straight away.
 		ws.send(createPacket("status"));
-
-		process.stdin.removeListener("data", initialListener);
-		gameProcess.stdout.removeListener("data", filter);
-		gameProcess.stderr.removeListener("data", filter);
-		process.stdin.on("data", function (text) {
-			ws.send(createPacket(text));
-		});
+		useRcon(true);
 	});
 
 	ws.on("message", function (data) {
@@ -116,7 +161,7 @@ function poll() {
 				});
 			}
 		} catch (e) {
-			console.log(e);
+			console.log("Error parsing RCON message: " + e.message);
 		}
 	});
 
@@ -126,13 +171,25 @@ function poll() {
 		setTimeout(poll, 5000);
 	});
 
+	// An RCON drop used to exit the wrapper, which killed the game without a save. Reconnect instead.
 	ws.on("close", function () {
 		if (!waiting) {
-			console.log("Connection to server closed.");
-			exited = true;
-			process.exit();
+			waiting = true;
+			useRcon(false);
+			console.log("RCON connection closed. Reconnecting...");
+			setTimeout(poll, 5000);
 		}
 	});
 }
+
+// Wings sends SIGTERM when a stop times out. Node is PID 1 and ignores it by default,
+// so ask Rust to save and quit, falling back to a plain SIGTERM.
+process.on("SIGTERM", function () {
+	if (ws && ws.readyState === WebSocket.OPEN) {
+		ws.send(createPacket("quit"));
+	} else {
+		gameProcess.kill("SIGTERM");
+	}
+});
 
 poll();

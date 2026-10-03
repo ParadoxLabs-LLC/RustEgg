@@ -1,0 +1,53 @@
+name: Test server boot
+
+# Builds the image and boots a real Rust server with it, the way Pterodactyl would.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - entrypoint.sh
+      - wrapper.js
+      - egg-paradox-rust.json
+      - tests/**
+      - .github/workflows/test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: vanilla-public
+            vars: FRAMEWORK=vanilla BRANCH=public PREVENT_BP_WIPES=1
+          - name: oxide-public
+            vars: FRAMEWORK=oxide BRANCH=public DISCORD_EXT=1 RUSTEDIT_EXT=1 CHAOS_EXT=1
+          - name: carbon-staging
+            vars: FRAMEWORK=carbon BRANCH=staging DISCORD_EXT=1 RUSTEDIT_EXT=1
+    name: boot (${{ matrix.name }})
+    steps:
+      - name: Free disk space for the Rust download
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker system prune -af >/dev/null
+          df -h /
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t rustegg:test .
+      - name: Boot server
+        env:
+          TEST_NAME: ${{ matrix.name }}
+        run: bash tests/run-server.sh rustegg:test ${{ matrix.vars }}
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log-${{ matrix.name }}
+          path: .test-server/server.log
+          if-no-files-found: ignore
