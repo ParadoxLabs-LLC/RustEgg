@@ -4,10 +4,10 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-10-03T04:01:59+00:00",
+    "exported_at": "2026-10-03T04:08:26+00:00",
     "name": "Rust (Paradox)",
     "author": "support@pterodactyl.io",
-    "description": "Rust dedicated server. Supports the public, release, staging and aux branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit, ChaosCode and PreventBlueprintWipes downloads.",
+    "description": "Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.",
     "features": [
         "steam_disk_space"
     ],
@@ -24,7 +24,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\n# SteamCMD install for Rust. Server files: /mnt/server\nSRCDS_APPID=258550\n\ncd /tmp\nmkdir -p /mnt/server/steamcmd /mnt/server/steamapps\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzf steamcmd.tar.gz -C /mnt/server/steamcmd\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise, even as root. Ownership is fixed after install.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\nBETA_ARGS=\"\"\nif [ -n \"${BRANCH}\" ] && [ \"${BRANCH}\" != \"public\" ]; then\n    BETA_ARGS=\"-beta ${BRANCH}\"\nfi\n\n# Warm up SteamCMD first; its first run often fails with \"Missing configuration\".\n./steamcmd.sh +login anonymous +quit || true\n\n./steamcmd.sh +force_install_dir /mnt/server +login anonymous +app_update ${SRCDS_APPID} ${BETA_ARGS} validate +quit\n\nmkdir -p /mnt/server/.steam/sdk32 /mnt/server/.steam/sdk64\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n# Keep panel backups small: back up saves, plugins and mods, not game files.\nif [ ! -f /mnt/server/.pteroignore ]; then\n    printf \"%s\\n\" \"*\" \"!server\" \"!oxide\" \"!carbon\" \"!HarmonyMods\" \"!.egg_state\" > /mnt/server/.pteroignore\nfi\n\n# Remember the installed branch so the first start does not re-validate.\nprintf 'branch=%s\\n' \"${BRANCH:-public}\" > /mnt/server/.egg_state\necho \"Install complete.\"",
+            "script": "#!/bin/bash\n# SteamCMD install for Rust. Server files: /mnt/server\nSRCDS_APPID=258550\n\ncd /tmp\nmkdir -p /mnt/server/steamcmd /mnt/server/steamapps\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzf steamcmd.tar.gz -C /mnt/server/steamcmd\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise, even as root. Ownership is fixed after install.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\nBETA_ARGS=\"\"\nif [ -n \"${BRANCH}\" ] && [ \"${BRANCH}\" != \"public\" ]; then\n    BETA_ARGS=\"-beta ${BRANCH}\"\nfi\n\n# Warm up SteamCMD first; its first run often fails with \"Missing configuration\".\n./steamcmd.sh +login anonymous +quit || true\n\n./steamcmd.sh +force_install_dir /mnt/server +login anonymous +app_update ${SRCDS_APPID} ${BETA_ARGS} validate +quit\n\nmkdir -p /mnt/server/.steam/sdk32 /mnt/server/.steam/sdk64\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n# Keep panel backups small: back up saves, plugins and mods, not game files.\nif [ ! -f /mnt/server/.pteroignore ]; then\n    printf \"%s\\n\" \"*\" \"!server\" \"!oxide\" \"!carbon\" \"!.egg_state\" > /mnt/server/.pteroignore\nfi\n\n# Remember the installed branch so the first start does not re-validate.\nprintf 'branch=%s\\n' \"${BRANCH:-public}\" > /mnt/server/.egg_state\necho \"Install complete.\"",
             "container": "ghcr.io/pterodactyl/installers:debian",
             "entrypoint": "bash"
         }
@@ -192,12 +192,12 @@
         },
         {
             "name": "Branch",
-            "description": "Rust game branch: public (normal), release, staging, aux01, aux02 or aux03. aux branches only exist while Facepunch runs them; if Steam has no such branch the update fails and the server will not start until you pick another. Oxide supports public, release and staging only. Carbon supports all. Changing branch re-validates the game on the next start. Saves may not carry over between branches.",
+            "description": "Rust game branch: public (normal) or staging (Facepunch test branch). Oxide and Carbon are installed in the matching build. Changing branch re-validates the game on the next start. Saves may not carry over between branches.",
             "env_variable": "BRANCH",
             "default_value": "public",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|in:public,release,staging,aux01,aux02,aux03",
+            "rules": "required|in:public,staging",
             "field_type": "text"
         },
         {
@@ -271,16 +271,6 @@
             "field_type": "text"
         },
         {
-            "name": "Prevent Blueprint Wipes",
-            "description": "Installs the Rust.PreventBlueprintWipes Harmony mod so player blueprints survive forced and map wipes. Works on vanilla too. 1 = on, 0 = remove.",
-            "env_variable": "PREVENT_BP_WIPES",
-            "default_value": "0",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|boolean",
-            "field_type": "text"
-        },
-        {
             "name": "Require TPM + Secure Boot",
             "description": "Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.",
             "env_variable": "REQUIRE_TPM_SECURE_BOOT",
@@ -338,16 +328,6 @@
             "user_viewable": true,
             "user_editable": false,
             "rules": "required|integer",
-            "field_type": "text"
-        },
-        {
-            "name": "Egg Debug",
-            "description": "Print every command the startup script runs. For troubleshooting only. 1 = on, 0 = off.",
-            "env_variable": "EGG_DEBUG",
-            "default_value": "0",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|boolean",
             "field_type": "text"
         },
         {

@@ -7,10 +7,8 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
 
 ## Features
 
-- **Game branches:** public, release, staging, aux01, aux02, aux03. Changing the branch forces a full validate on the next start.
+- **Game branches:** public and staging. Changing the branch forces a full validate on the next start.
 - **Modding framework:** vanilla, oxide or carbon, with the framework build that matches the branch.
-  - Oxide: public, release and staging.
-  - Carbon: every branch.
   - Switching framework re-validates the game and removes the old framework's DLLs.
   - Switching between Oxide and Carbon copies plugins, configs, data and lang across once. Existing files are kept and the old folder is never deleted.
   - If a required validate fails, the server does not start with mismatched files, and the next start tries again.
@@ -19,7 +17,6 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
   - Discord (`Oxide.Ext.Discord`)
   - RustEdit (`Oxide.Ext.RustEdit`)
   - ChaosCode (`Oxide.Ext.Chaos`)
-  - PreventBlueprintWipes (Harmony mod, works on vanilla too)
 
   Turning a toggle off removes that DLL on the next start. A failed download keeps the installed copy, and any file that is not a real DLL is rejected.
 - **FPS Limit** variable, passed as `+fps.limit`.
@@ -59,4 +56,4 @@ node build-egg.js ghcr.io/paradoxlabs-llc/rustegg:latest
 
 - Every convar in **Additional Arguments** must start with `+`, for example `+server.pve true`.
 - A `fps.limit` value saved in `server/<identity>/cfg/serverauto.cfg`, or set by a plugin, overrides the FPS Limit variable.
-- Steam branch names change over time. If a branch disappears, SteamCMD fails and the server starts on its installed files.
+- On wipe day Oxide can be released before or after the Rust update. If a server crashes after a wipe, set Framework Update to 0 until both match.

@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - name: vanilla-public
-            vars: FRAMEWORK=vanilla BRANCH=public PREVENT_BP_WIPES=1
+            vars: FRAMEWORK=vanilla BRANCH=public
           - name: oxide-public
             vars: FRAMEWORK=oxide BRANCH=public DISCORD_EXT=1 RUSTEDIT_EXT=1 CHAOS_EXT=1
           - name: carbon-staging

@@ -2,12 +2,12 @@
 # Rust server entrypoint for Pterodactyl.
 #
 # On every start:
-#   1. Validates FRAMEWORK (vanilla/oxide/carbon) and BRANCH (public/release/staging/aux01/aux02/aux03).
+#   1. Validates FRAMEWORK (vanilla/oxide/carbon) and BRANCH (public/staging).
 #   2. Updates the game through SteamCMD on the chosen branch. A branch or framework change forces a validate,
 #      and the server will not start if that validate fails.
 #   3. Installs or updates Oxide or Carbon for that branch, removes the other framework's DLLs, and copies
 #      plugins/configs/data across once when switching between Oxide and Carbon (nothing is deleted).
-#   4. Downloads the enabled extensions (Discord, RustEdit, ChaosCode, PreventBlueprintWipes).
+#   4. Downloads the enabled extensions (Discord, RustEdit, ChaosCode).
 #   5. Builds the startup line from the egg and hands it to wrapper.js.
 
 cd /home/container || exit 1
@@ -15,8 +15,6 @@ cd /home/container || exit 1
 log()  { echo -e "\033[1;36m[egg]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[egg] WARNING:\033[0m $*"; }
 fail() { echo -e "\033[1;31m[egg] ERROR:\033[0m $*"; exit 1; }
-
-[ "${EGG_DEBUG}" = "1" ] && set -x
 
 # Make internal Docker IP address available to processes.
 INTERNAL_IP=$(ip route get 1 2>/dev/null | awk '{print $(NF-2);exit}')
@@ -40,8 +38,8 @@ case "${FRAMEWORK}" in
 esac
 
 case "${BRANCH}" in
-    public|release|staging|aux01|aux02|aux03) ;;
-    *) fail "Branch '${BRANCH}' is not valid. Use public, release, staging, aux01, aux02 or aux03." ;;
+    public|staging) ;;
+    *) fail "Branch '${BRANCH}' is not valid. Use public or staging." ;;
 esac
 
 # Pick the framework build that matches the game branch.
@@ -49,14 +47,13 @@ OXIDE_URL=""
 CARBON_URL=""
 if [ "${FRAMEWORK}" = "oxide" ]; then
     case "${BRANCH}" in
-        public|release) OXIDE_URL="https://github.com/OxideMod/Oxide.Rust/releases/latest/download/Oxide.Rust-linux.zip" ;;
-        staging)        OXIDE_URL="https://downloads.oxidemod.com/artifacts/Oxide.Rust/staging/Oxide.Rust-linux.zip" ;;
-        *) fail "Oxide has no build for the '${BRANCH}' branch. Switch the Modding Framework to carbon or vanilla, or the Branch to public or staging." ;;
+        public)  OXIDE_URL="https://github.com/OxideMod/Oxide.Rust/releases/latest/download/Oxide.Rust-linux.zip" ;;
+        staging) OXIDE_URL="https://downloads.oxidemod.com/artifacts/Oxide.Rust/staging/Oxide.Rust-linux.zip" ;;
     esac
 elif [ "${FRAMEWORK}" = "carbon" ]; then
     case "${BRANCH}" in
-        public|release) CARBON_URL="https://github.com/CarbonCommunity/Carbon.Core/releases/download/production_build/Carbon.Linux.Release.tar.gz" ;;
-        *)              CARBON_URL="https://github.com/CarbonCommunity/Carbon/releases/download/rustbeta_${BRANCH}_build/Carbon.Linux.Debug.tar.gz" ;;
+        public)  CARBON_URL="https://github.com/CarbonCommunity/Carbon/releases/download/production_build/Carbon.Linux.Release.tar.gz" ;;
+        staging) CARBON_URL="https://github.com/CarbonCommunity/Carbon/releases/download/rustbeta_staging_build/Carbon.Linux.Debug.tar.gz" ;;
     esac
 fi
 
@@ -281,8 +278,6 @@ fi
 install_dll "${DISCORD_EXT}"  Oxide.Ext.Discord.dll  "https://umod.org/extensions/discord/download" "${EXT_DIR}"
 install_dll "${RUSTEDIT_EXT}" Oxide.Ext.RustEdit.dll "https://github.com/k1lly0u/Oxide.Ext.RustEdit/raw/master/Oxide.Ext.RustEdit.dll" "${EXT_DIR}"
 install_dll "${CHAOS_EXT}"    Oxide.Ext.Chaos.dll    "https://oxide.chaoscode.io/Oxide.Ext.Chaos.dll" "${EXT_DIR}" "Oxide.Ext.Chaos/1.0"
-# Harmony mods load on every framework, including vanilla.
-install_dll "${PREVENT_BP_WIPES}" Rust.PreventBlueprintWipes.dll "https://github.com/NinerAlpha/PreventBlueprintsWipe/releases/latest/download/Rust.PreventBlueprintWipes.dll" "HarmonyMods"
 
 rm -rf "${DL_DIR}"
 

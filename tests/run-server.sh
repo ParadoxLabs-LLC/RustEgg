@@ -114,7 +114,6 @@ esac
 [ "${VARS[DISCORD_EXT]}" = "1" ]  && check "Discord extension installed" "Oxide.Ext.Discord.dll updated"
 [ "${VARS[RUSTEDIT_EXT]}" = "1" ] && check "RustEdit extension installed" "Oxide.Ext.RustEdit.dll updated"
 [ "${VARS[CHAOS_EXT]}" = "1" ]    && check "ChaosCode extension installed" "Oxide.Ext.Chaos.dll updated"
-[ "${VARS[PREVENT_BP_WIPES]}" = "1" ] && check "PreventBlueprintWipes installed" "Rust.PreventBlueprintWipes.dll updated"
 
 echo "Stopping with SIGTERM (Wings kill path)..."
 docker stop -t 120 "${NAME}" >/dev/null

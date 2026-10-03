@@ -51,7 +51,7 @@ const install = [
   '',
   '# Keep panel backups small: back up saves, plugins and mods, not game files.',
   'if [ ! -f /mnt/server/.pteroignore ]; then',
-  '    printf "%s\\n" "*" "!server" "!oxide" "!carbon" "!HarmonyMods" "!.egg_state" > /mnt/server/.pteroignore',
+  '    printf "%s\\n" "*" "!server" "!oxide" "!carbon" "!.egg_state" > /mnt/server/.pteroignore',
   'fi',
   '',
   '# Remember the installed branch so the first start does not re-validate.',
@@ -68,7 +68,7 @@ const egg = {
   exported_at: new Date().toISOString().replace(/\.\d+Z$/, '+00:00'),
   name: 'Rust (Paradox)',
   author: 'support@pterodactyl.io',
-  description: 'Rust dedicated server. Supports the public, release, staging and aux branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit, ChaosCode and PreventBlueprintWipes downloads.',
+  description: 'Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.',
   features: ['steam_disk_space'],
   docker_images: { 'Paradox Rust': image },
   file_denylist: [],
@@ -98,7 +98,7 @@ const egg = {
     v('Server Identity', 'Folder under server/ that holds the save, config and player data. Changing it starts a fresh save.', 'SERVER_IDENTITY', 'rust', 'required|string|regex:/^[\\w.-]+$/|max:64'),
     v('Additional Arguments', 'Extra startup convars. Every convar must start with a +, for example: +server.pve true. Values without a + are ignored by the server.', 'ADDITIONAL_ARGS', '', 'nullable|string'),
 
-    v('Branch', 'Rust game branch: public (normal), release, staging, aux01, aux02 or aux03. aux branches only exist while Facepunch runs them; if Steam has no such branch the update fails and the server will not start until you pick another. Oxide supports public, release and staging only. Carbon supports all. Changing branch re-validates the game on the next start. Saves may not carry over between branches.', 'BRANCH', 'public', 'required|in:public,release,staging,aux01,aux02,aux03'),
+    v('Branch', 'Rust game branch: public (normal) or staging (Facepunch test branch). Oxide and Carbon are installed in the matching build. Changing branch re-validates the game on the next start. Saves may not carry over between branches.', 'BRANCH', 'public', 'required|in:public,staging'),
     v('Modding Framework', 'vanilla, oxide or carbon. Switching re-validates the game on the next start and removes the old framework\'s files. Plugins are not moved between the oxide and carbon folders.', 'FRAMEWORK', 'vanilla', 'required|in:vanilla,oxide,carbon'),
     v('Auto Update', 'Update the game through SteamCMD on every start. 1 = on, 0 = off.', 'AUTO_UPDATE', '1', 'required|boolean'),
     v('Validate Game Files', 'Run a full SteamCMD validate on every start. Slower. 1 = on, 0 = off.', 'VALIDATE', '0', 'required|boolean'),
@@ -106,7 +106,6 @@ const egg = {
     v('Discord Extension', 'Oxide.Ext.Discord. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'DISCORD_EXT', '0', 'required|boolean'),
     v('RustEdit Extension', 'Oxide.Ext.RustEdit, needed by many RustEdit custom maps. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'RUSTEDIT_EXT', '0', 'required|boolean'),
     v('ChaosCode Extension', 'Oxide.Ext.Chaos, used by ChaosCode plugins. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'CHAOS_EXT', '0', 'required|boolean'),
-    v('Prevent Blueprint Wipes', 'Installs the Rust.PreventBlueprintWipes Harmony mod so player blueprints survive forced and map wipes. Works on vanilla too. 1 = on, 0 = remove.', 'PREVENT_BP_WIPES', '0', 'required|boolean'),
     v('Require TPM + Secure Boot', 'Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.', 'REQUIRE_TPM_SECURE_BOOT', '0', 'required|boolean'),
     v('Log File', 'Also write the server log to logs/<date>.log. While on, the console only shows output after RCON connects. 1 = on, 0 = off.', 'LOG_FILE', '0', 'required|boolean'),
 
@@ -114,7 +113,6 @@ const egg = {
     v('RCON Port', 'Port for RCON connections.', 'RCON_PORT', '28016', 'required|integer', false),
     v('RCON Password', 'RCON access password. Letters, numbers, dot, dash and underscore only.', 'RCON_PASS', '', 'required|regex:/^[\\w.-]*$/|min:8|max:64'),
     v('App Port', 'Port for the Rust+ App. -1 to disable.', 'APP_PORT', '28082', 'required|integer', false),
-    v('Egg Debug', 'Print every command the startup script runs. For troubleshooting only. 1 = on, 0 = off.', 'EGG_DEBUG', '0', 'required|boolean'),
     v('App Public IP', 'Public IP for the Rust+ app. Leave blank unless you have read https://wiki.facepunch.com/rust/rust-companion-server', 'APP_PUBLIC_IP', '', 'nullable|ip', false),
   ],
 };
