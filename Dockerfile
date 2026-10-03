@@ -19,9 +19,13 @@ RUN         dpkg --add-architecture i386 \
                 lib32gcc-s1 lib32stdc++6 libgdiplus libsdl2-2.0-0:i386 \
             && rm -rf /var/lib/apt/lists/*
 
-RUN         mkdir /node_modules \
-            && npm install --prefix / ws@8 \
+# npm refuses to install into /, so ws lives in /opt/wrapper and NODE_PATH points to it.
+RUN         mkdir -p /opt/wrapper \
+            && cd /opt/wrapper \
+            && npm init -y > /dev/null \
+            && npm install --omit=dev ws@8 \
             && npm cache clean --force
+ENV         NODE_PATH=/opt/wrapper/node_modules
 
 RUN         useradd -d /home/container -m container
 
