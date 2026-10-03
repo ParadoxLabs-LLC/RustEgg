@@ -23,7 +23,7 @@ jobs:
           - name: vanilla-public
             vars: FRAMEWORK=vanilla BRANCH=public
           - name: oxide-public
-            vars: FRAMEWORK=oxide BRANCH=public DISCORD_EXT=1 RUSTEDIT_EXT=1 CHAOS_EXT=1
+            vars: FRAMEWORK=oxide BRANCH=public DISCORD_EXT=1 RUSTEDIT_EXT=1 CHAOS_EXT=1 LOG_FILE=1
           - name: carbon-staging
             vars: FRAMEWORK=carbon BRANCH=staging DISCORD_EXT=1 RUSTEDIT_EXT=1
     name: boot (${{ matrix.name }})

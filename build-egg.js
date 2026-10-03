@@ -99,6 +99,8 @@ const egg = {
     v('ChaosCode Extension', 'Oxide.Ext.Chaos, used by ChaosCode plugins. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'CHAOS_EXT', '0', 'required|boolean'),
     v('Require TPM + Secure Boot', 'Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.', 'REQUIRE_TPM_SECURE_BOOT', '0', 'required|boolean'),
 
+    v('Log File', 'Also save the console output to logs/<date>.log, one file per start. 1 = on, 0 = off.', 'LOG_FILE', '0', 'required|boolean'),
+
     v('Query Port', 'Server Query Port. Can\'t be the same as Game\'s primary port.', 'QUERY_PORT', '27017', 'required|integer', false),
     v('RCON Port', 'Port for RCON connections.', 'RCON_PORT', '28016', 'required|integer', false),
     v('RCON Password', 'RCON access password. Letters, numbers, dot, dash and underscore only.', 'RCON_PASS', '', 'required|regex:/^[\\w.-]*$/|min:8|max:64'),

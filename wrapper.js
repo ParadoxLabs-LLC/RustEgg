@@ -18,6 +18,20 @@ fs.writeFile("latest.log", "", (err) => {
 	if (err) console.log("Callback error in writeFile: " + err);
 });
 
+// Log File option: copy everything shown in the console to logs/<date>.log.
+// Rust's own -logfile is not used, because it makes RCON send every line twice.
+let logFile = null;
+if (process.env.LOG_FILE === "1") {
+	fs.mkdirSync("logs", { recursive: true });
+	const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
+	logFile = fs.createWriteStream("logs/" + stamp + ".log", { flags: "a" });
+}
+
+function show(text) {
+	process.stdout.write(text + "\n");
+	if (logFile) logFile.write(text + "\n");
+}
+
 // Harmless Unity/server noise that floods the console during boot.
 const noise = [
 	"Fallback handler could not load library",
@@ -49,7 +63,7 @@ function filter(data) {
 		}
 		kept.push(line);
 	}
-	if (kept.length) process.stdout.write(kept.join("\n") + "\n");
+	if (kept.length) show(kept.join("\n"));
 }
 
 console.log("Starting Rust...");
@@ -136,7 +150,7 @@ function poll() {
 	const serverHostname = process.env.RCON_IP ? process.env.RCON_IP : "127.0.0.1";
 	const serverPort = process.env.RCON_PORT;
 	const serverPassword = process.env.RCON_PASS;
-	ws = new WebSocket("ws://" + serverHostname + ":" + serverPort + "/" + serverPassword);
+	ws = new WebSocket("ws://" + serverHostname + ":" + serverPort + "/" + encodeURIComponent(serverPassword || ""));
 
 	ws.on("open", function open() {
 		console.log('Connected to RCON. Generating the map now. Please wait until the server status switches to "Running".');
@@ -150,7 +164,7 @@ function poll() {
 		try {
 			const json = JSON.parse(data);
 			if (json && json.Message !== undefined && json.Message.length > 0) {
-				console.log(json.Message);
+				show(json.Message);
 				fs.appendFile("latest.log", "\n" + json.Message, (err) => {
 					if (err) console.log("Callback error in appendFile: " + err);
 				});

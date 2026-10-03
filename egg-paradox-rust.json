@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-10-03T04:51:29+00:00",
+    "exported_at": "2026-10-03T04:53:13+00:00",
     "name": "Rust (Paradox)",
     "author": "support@pterodactyl.io",
     "description": "Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.",
@@ -274,6 +274,16 @@
             "name": "Require TPM + Secure Boot",
             "description": "Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.",
             "env_variable": "REQUIRE_TPM_SECURE_BOOT",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Log File",
+            "description": "Also save the console output to logs/<date>.log, one file per start. 1 = on, 0 = off.",
+            "env_variable": "LOG_FILE",
             "default_value": "0",
             "user_viewable": true,
             "user_editable": true,

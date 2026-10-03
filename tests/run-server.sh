@@ -117,6 +117,16 @@ esac
 [ "${VARS[RUSTEDIT_EXT]}" = "1" ] && check "RustEdit extension installed" "Oxide.Ext.RustEdit.dll updated"
 [ "${VARS[CHAOS_EXT]}" = "1" ]    && check "ChaosCode extension installed" "Oxide.Ext.Chaos.dll updated"
 
+# Every console line must show once (the old -logfile path printed RCON lines twice).
+n=$(grep -c "Server startup complete" "${WORK}/server.log")
+if [ "${n}" = "1" ]; then echo "PASS: console lines not doubled"
+else echo "FAIL: 'Server startup complete' shown ${n} times"; annotate "FAIL: console lines doubled (${n}x)"; fail=1; fi
+
+if [ "${VARS[LOG_FILE]}" = "1" ]; then
+    if sudo grep -qs "Server startup complete" "${WORK}"/server/logs/*.log; then echo "PASS: log file written"
+    else echo "FAIL: log file written"; annotate "FAIL: logs/<date>.log missing or empty"; fail=1; fi
+fi
+
 echo "Stopping with SIGTERM (Wings kill path)..."
 docker stop -t 120 "${NAME}" >/dev/null
 docker logs "${NAME}" > "${WORK}/server.log" 2>&1
