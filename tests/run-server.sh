@@ -105,6 +105,7 @@ check() {  # check <description> <grep -E pattern> [absent]
 
 check "startup line has -batchmode" "RustDedicated -batchmode"
 check "wrapper connected to RCON" "Connected to RCON"
+check "no -logfile reaches Rust" "RustDedicated -batchmode.* -logfile" absent
 check "no egg errors" "\[egg\] ERROR" absent
 check "no download failures" "download failed" absent
 case "${VARS[FRAMEWORK]}" in

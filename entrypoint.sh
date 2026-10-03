@@ -299,6 +299,15 @@ done
 MODIFIED_STARTUP=$(eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g'))
 set +f
 
+# Rust's -logfile makes RCON send every console line twice. It can still arrive from an older
+# egg (Pine's start command adds it) or from Additional Arguments, so remove it here and let
+# wrapper.js write the log file instead.
+if echo "${MODIFIED_STARTUP}" | grep -qE '(^| )-logfile( |$)'; then
+    MODIFIED_STARTUP=$(echo "${MODIFIED_STARTUP}" | sed -E 's/(^| )-logfile( +("[^"]*"|[^ ]+))?/\1/g')
+    export LOG_FILE=1
+    log "Removed -logfile from the start command (it doubles console lines). Log File is handled by the egg instead."
+fi
+
 # Carbon's own launch setup (doorstop, LD_PRELOAD, library path). wrapper.js runs this in bash.
 if [ "${FRAMEWORK}" = "carbon" ]; then
     MODIFIED_STARTUP=". ./carbon/tools/environment.sh && ${MODIFIED_STARTUP}"
