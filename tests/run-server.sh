@@ -13,8 +13,7 @@ set -uo pipefail
 # Report a failure as a GitHub annotation (readable without opening the job log).
 annotate() {  # annotate <title> [file with details]
     local body="$1"
-    [ -n "${2:-}" ] && body="${body}%0A$(tail -n 40 "$2" | sed 's/%/%25/g' | tr -d '' | sed ':a;N;$!ba;s/
-/%0A/g')"
+    [ -n "${2:-}" ] && body="${body}%0A$(tail -n 40 "$2" | sed 's/%/%25/g' | tr -d '\r' | awk '{printf "%s%%0A", $0}')"
     echo "::error title=${TEST_NAME:-boot}::${body}"
 }
 
@@ -120,7 +119,6 @@ docker stop -t 120 "${NAME}" >/dev/null
 docker logs "${NAME}" > "${WORK}/server.log" 2>&1
 check "server saved on stop" "Saving complete|Saved [0-9,]+ ents|Server shutdown|Quitting"
 echo "Container exit code: $(docker inspect -f '{{.State.ExitCode}}' "${NAME}")"
-[ ${fail} -eq 0 ] && echo "::notice title=${TEST_NAME:-boot}::All checks passed. Boot log tail:%0A$(grep -E '[egg]|Server startup complete|Connected to RCON' "${WORK}/server.log" | tail -n 25 | tr -d '' | sed ':a;N;$!ba;s/
-/%0A/g')"
+[ ${fail} -eq 0 ] && echo "::notice title=${TEST_NAME:-boot}::All checks passed. Boot log tail:%0A$(grep -E '\[egg\]|Server startup complete|Connected to RCON' "${WORK}/server.log" | tail -n 25 | tr -d '\r' | awk '{printf "%s%%0A", $0}')"
 
 exit ${fail}

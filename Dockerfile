@@ -2,7 +2,7 @@
 # Based on the official pterodactyl/yolks games/rust image (MIT), extended with
 # beta branch support, Oxide/Carbon handling and extension downloads.
 
-FROM        --platform=linux/amd64 node:20-bookworm-slim
+FROM        node:20-bookworm-slim
 
 LABEL       org.opencontainers.image.title="Paradox Rust"
 LABEL       org.opencontainers.image.description="Rust dedicated server for Pterodactyl with branch, Oxide/Carbon and extension support"
