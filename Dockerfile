@@ -2,7 +2,7 @@
 # Based on the official pterodactyl/yolks games/rust image (MIT), extended with
 # beta branch support, Oxide/Carbon handling and extension downloads.
 
-FROM        node:20-bookworm-slim
+FROM        node:22-bookworm-slim
 
 LABEL       org.opencontainers.image.title="Paradox Rust"
 LABEL       org.opencontainers.image.description="Rust dedicated server for Pterodactyl with branch, Oxide/Carbon and extension support"
@@ -15,7 +15,7 @@ RUN         dpkg --add-architecture i386 \
             && apt-get update \
             && apt-get upgrade -y \
             && apt-get install -y --no-install-recommends \
-                ca-certificates curl unzip tar gzip iproute2 tzdata procps locales \
+                ca-certificates curl unzip tar gzip iproute2 tzdata locales \
                 lib32gcc-s1 lib32stdc++6 libgdiplus libsdl2-2.0-0:i386 \
             && sed -i 's/^# *en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen \
             && locale-gen \

@@ -1,5 +1,7 @@
 name: Build image
 
+# Every client server pulls :latest, so the image is only published after a real
+# server has booted with it on every framework.
 on:
   push:
     branches: [main]
@@ -9,11 +11,49 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  build:
+  boot:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: vanilla-public
+            vars: FRAMEWORK=vanilla BRANCH=public
+          - name: oxide-public
+            vars: FRAMEWORK=oxide BRANCH=public DISCORD_EXT=1 RUSTEDIT_EXT=1 CHAOS_EXT=1
+          - name: carbon-staging
+            vars: FRAMEWORK=carbon BRANCH=staging DISCORD_EXT=1 RUSTEDIT_EXT=1
+    name: boot (${{ matrix.name }})
+    steps:
+      - name: Free disk space for the Rust download
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker system prune -af >/dev/null
+          df -h /
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t rustegg:test .
+      - name: Boot server
+        env:
+          TEST_NAME: ${{ matrix.name }}
+        run: bash tests/run-server.sh rustegg:test ${{ matrix.vars }}
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log-${{ matrix.name }}
+          path: .test-server/server.log
+          if-no-files-found: ignore
+
+  publish:
+    needs: boot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

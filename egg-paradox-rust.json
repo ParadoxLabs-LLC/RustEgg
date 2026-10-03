@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-10-03T04:08:26+00:00",
+    "exported_at": "2026-10-03T04:18:20+00:00",
     "name": "Rust (Paradox)",
     "author": "support@pterodactyl.io",
     "description": "Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.",
@@ -24,7 +24,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\n# SteamCMD install for Rust. Server files: /mnt/server\nSRCDS_APPID=258550\n\ncd /tmp\nmkdir -p /mnt/server/steamcmd /mnt/server/steamapps\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzf steamcmd.tar.gz -C /mnt/server/steamcmd\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise, even as root. Ownership is fixed after install.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\nBETA_ARGS=\"\"\nif [ -n \"${BRANCH}\" ] && [ \"${BRANCH}\" != \"public\" ]; then\n    BETA_ARGS=\"-beta ${BRANCH}\"\nfi\n\n# Warm up SteamCMD first; its first run often fails with \"Missing configuration\".\n./steamcmd.sh +login anonymous +quit || true\n\n./steamcmd.sh +force_install_dir /mnt/server +login anonymous +app_update ${SRCDS_APPID} ${BETA_ARGS} validate +quit\n\nmkdir -p /mnt/server/.steam/sdk32 /mnt/server/.steam/sdk64\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n# Keep panel backups small: back up saves, plugins and mods, not game files.\nif [ ! -f /mnt/server/.pteroignore ]; then\n    printf \"%s\\n\" \"*\" \"!server\" \"!oxide\" \"!carbon\" \"!.egg_state\" > /mnt/server/.pteroignore\nfi\n\n# Remember the installed branch so the first start does not re-validate.\nprintf 'branch=%s\\n' \"${BRANCH:-public}\" > /mnt/server/.egg_state\necho \"Install complete.\"",
+            "script": "#!/bin/bash\n# SteamCMD install for Rust. Server files: /mnt/server\nSRCDS_APPID=258550\n\ncd /tmp\nmkdir -p /mnt/server/steamcmd /mnt/server/steamapps\ncurl -sSL -o steamcmd.tar.gz https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz\ntar -xzf steamcmd.tar.gz -C /mnt/server/steamcmd\ncd /mnt/server/steamcmd\n\n# SteamCMD fails otherwise, even as root. Ownership is fixed after install.\nchown -R root:root /mnt\nexport HOME=/mnt/server\n\n# Warm up SteamCMD first; its first run often fails with \"Missing configuration\".\n./steamcmd.sh +login anonymous +quit || true\n\n# Always name the branch. Without -beta, SteamCMD stays on the last beta used.\n./steamcmd.sh +force_install_dir /mnt/server +login anonymous +app_update ${SRCDS_APPID} -beta \"${BRANCH:-public}\" validate +quit\n\nmkdir -p /mnt/server/.steam/sdk32 /mnt/server/.steam/sdk64\ncp -v linux32/steamclient.so ../.steam/sdk32/steamclient.so\ncp -v linux64/steamclient.so ../.steam/sdk64/steamclient.so\n\n# Remember the installed branch so the first start does not re-validate.\nprintf 'branch=%s\\n' \"${BRANCH:-public}\" > /mnt/server/.egg_state\necho \"Install complete.\"",
             "container": "ghcr.io/pterodactyl/installers:debian",
             "entrypoint": "bash"
         }
@@ -202,7 +202,7 @@
         },
         {
             "name": "Modding Framework",
-            "description": "vanilla, oxide or carbon. Switching re-validates the game on the next start and removes the old framework's files. Plugins are not moved between the oxide and carbon folders.",
+            "description": "vanilla, oxide or carbon. Switching re-validates the game on the next start and removes the old framework's DLLs. Switching between oxide and carbon copies plugins, configs and data across once; the old folder is kept.",
             "env_variable": "FRAMEWORK",
             "default_value": "vanilla",
             "user_viewable": true,

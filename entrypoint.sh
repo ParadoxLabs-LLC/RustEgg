@@ -20,8 +20,7 @@ fail() { echo -e "\033[1;31m[egg] ERROR:\033[0m $*"; exit 1; }
 INTERNAL_IP=$(ip route get 1 2>/dev/null | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
 
-# Accept the Pine Hosting variable name too, so servers moved from the Pine egg keep their branch.
-BRANCH="${BRANCH:-${SRCDS_BETAID:-public}}"
+BRANCH="${BRANCH:-public}"
 FRAMEWORK="${FRAMEWORK:-vanilla}"
 STATE_FILE=".egg_state"
 MANAGED="RustDedicated_Data/Managed"
@@ -66,6 +65,12 @@ PREV_FRAMEWORK=$(sed -n 's/^framework=//p' "${STATE_FILE}" 2>/dev/null)
 PENDING_VALIDATE=$(sed -n 's/^pending_validate=//p' "${STATE_FILE}" 2>/dev/null)
 FORCE_VALIDATE=0
 
+# No state file means the server came from another egg (for example Pine), so its branch and files are unknown.
+if [ ! -f "${STATE_FILE}" ] && [ -f ./RustDedicated ]; then
+    warn "No .egg_state found (server moved from another egg). Forcing a full validate."
+    FORCE_VALIDATE=1
+fi
+
 if [ "${PENDING_VALIDATE}" = "1" ]; then
     warn "The last required validate did not finish. Running it again."
     FORCE_VALIDATE=1
@@ -99,7 +104,7 @@ fi
 if [ ! -x ./steamcmd/steamcmd.sh ]; then
     log "SteamCMD not found. Installing it..."
     mkdir -p ./steamcmd
-    curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xz -C ./steamcmd \
+    curl -fsSL --connect-timeout 20 --max-time 300 https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar -xz -C ./steamcmd \
         || fail "Could not download SteamCMD."
 fi
 
@@ -118,8 +123,8 @@ if [ "${AUTO_UPDATE}" = "1" ] || [ "${FORCE_VALIDATE}" = "1" ] || [ ! -f ./RustD
             STEAM_RAN=1
             break
         fi
-        warn "SteamCMD failed (attempt ${attempt} of 3). Retrying in $((attempt * 10)) seconds..."
-        sleep $((attempt * 10))
+        warn "SteamCMD failed (attempt ${attempt} of 3)."
+        [ "${attempt}" -lt 3 ] && sleep $((attempt * 10))
     done
 
     if [ "${STEAM_RAN}" != "1" ]; then
@@ -157,12 +162,11 @@ if [ "${FRAMEWORK}" = "oxide" ]; then
     # That way Framework Update = 0 really pins the Oxide version (useful on wipe day).
     OXIDE_CACHE=".egg_cache/oxide-${BRANCH}.zip"
     mkdir -p .egg_cache
-    OXIDE_FRESH=0
-    if [ "${FRAMEWORK_UPDATE}" = "1" ] || [ ! -s "${OXIDE_CACHE}" ]; then
+    # A branch change needs the Oxide build for the new branch, even when updates are off.
+    if [ "${FRAMEWORK_UPDATE}" = "1" ] || [ "${FORCE_VALIDATE}" = "1" ] || [ ! -s "${OXIDE_CACHE}" ]; then
         log "Downloading Oxide for branch ${BRANCH}..."
-        if curl -fsSL -o "${DL_DIR}/oxide.zip" "${OXIDE_URL}" && unzip -tq "${DL_DIR}/oxide.zip" >/dev/null; then
+        if curl -fsSL --connect-timeout 20 --max-time 600 -o "${DL_DIR}/oxide.zip" "${OXIDE_URL}" && unzip -tq "${DL_DIR}/oxide.zip" >/dev/null; then
             mv -f "${DL_DIR}/oxide.zip" "${OXIDE_CACHE}"
-            OXIDE_FRESH=1
         elif [ -s "${OXIDE_CACHE}" ]; then
             warn "Oxide download failed. Using the last downloaded version."
         else
@@ -170,15 +174,15 @@ if [ "${FRAMEWORK}" = "oxide" ]; then
         fi
     fi
 
-    # A SteamCMD run can restore the unpatched game DLLs, so Oxide is reapplied after every update.
-    if [ "${OXIDE_FRESH}" = "1" ] || [ "${STEAM_RAN}" = "1" ] || [ ! -f "${MANAGED}/Oxide.Rust.dll" ]; then
-        unzip -o -q "${OXIDE_CACHE}" -d . || fail "Could not unpack Oxide."
-        log "Oxide applied."
-    fi
+    # SteamCMD or a panel reinstall can restore the unpatched game DLLs, so Oxide is applied on every start.
+    unzip -o -q "${OXIDE_CACHE}" -d . || fail "Could not unpack Oxide."
+    log "Oxide applied."
 elif [ "${FRAMEWORK}" = "carbon" ]; then
-    if [ "${FRAMEWORK_UPDATE}" = "1" ] || [ "${FORCE_VALIDATE}" = "1" ] || [ ! -f carbon/managed/Carbon.Preloader.dll ]; then
+    if [ "${FRAMEWORK_UPDATE}" = "1" ] || [ "${FORCE_VALIDATE}" = "1" ] || [ ! -f carbon/managed/Carbon.Preloader.dll ] \
+        || [ ! -f libdoorstop.so ] || [ ! -f carbon/tools/environment.sh ]; then
         log "Installing Carbon for branch ${BRANCH}..."
-        if curl -fsSL -o "${DL_DIR}/carbon.tar.gz" "${CARBON_URL}" && tar -xzf "${DL_DIR}/carbon.tar.gz" -C .; then
+        if curl -fsSL --connect-timeout 20 --max-time 600 -o "${DL_DIR}/carbon.tar.gz" "${CARBON_URL}" \
+            && tar -tzf "${DL_DIR}/carbon.tar.gz" >/dev/null && tar -xzf "${DL_DIR}/carbon.tar.gz" -C .; then
             log "Carbon installed."
         elif [ -f carbon/managed/Carbon.Preloader.dll ]; then
             warn "Carbon download failed. Keeping the installed version."
@@ -187,8 +191,8 @@ elif [ "${FRAMEWORK}" = "carbon" ]; then
         fi
         rm -f "${DL_DIR}/carbon.tar.gz"
     fi
-    [ -f carbon/managed/Carbon.Preloader.dll ] && [ -f libdoorstop.so ] \
-        || fail "Carbon files are incomplete (carbon/managed/Carbon.Preloader.dll or libdoorstop.so missing). Restart to reinstall Carbon."
+    [ -f carbon/managed/Carbon.Preloader.dll ] && [ -f libdoorstop.so ] && [ -f carbon/tools/environment.sh ] \
+        || fail "Carbon files are incomplete and the download failed. Restart to try again."
 fi
 
 ###########################################
@@ -255,7 +259,7 @@ install_dll() {
 
     mkdir -p "${dir}"
     local tmp="${DL_DIR}/${name}"
-    if curl -fsSL --retry 2 -A "${agent}" -o "${tmp}" "${url}" && [ "$(head -c 2 "${tmp}")" = "MZ" ]; then
+    if curl -fsSL --retry 2 --connect-timeout 20 --max-time 120 -A "${agent}" -o "${tmp}" "${url}" && [ "$(head -c 2 "${tmp}")" = "MZ" ]; then
         mv -f "${tmp}" "${dir}/${name}"
         log "${name} updated."
     else
@@ -267,13 +271,6 @@ install_dll() {
         fi
     fi
 }
-
-# Clean extension copies left in the other framework's folder.
-if [ "${FRAMEWORK}" = "carbon" ]; then
-    rm -f "${MANAGED}"/Oxide.Ext.*.dll
-elif [ -d carbon/extensions ]; then
-    rm -f carbon/extensions/Oxide.Ext.Discord.dll carbon/extensions/Oxide.Ext.RustEdit.dll carbon/extensions/Oxide.Ext.Chaos.dll
-fi
 
 install_dll "${DISCORD_EXT}"  Oxide.Ext.Discord.dll  "https://umod.org/extensions/discord/download" "${EXT_DIR}"
 install_dll "${RUSTEDIT_EXT}" Oxide.Ext.RustEdit.dll "https://github.com/k1lly0u/Oxide.Ext.RustEdit/raw/master/Oxide.Ext.RustEdit.dll" "${EXT_DIR}"
@@ -290,7 +287,7 @@ rm -rf "${DL_DIR}"
 # Free-text values pass through eval and then a shell. Strip characters that would break the
 # arguments or run commands, and turn off globbing so * stays literal.
 set -f
-for v in HOSTNAME DESCRIPTION SERVER_URL SERVER_IMG SERVER_LOGO WORLD_SEED MAP_URL SERVER_TAGS; do
+for v in HOSTNAME DESCRIPTION LEVEL SERVER_URL SERVER_IMG SERVER_LOGO WORLD_SEED MAP_URL SERVER_TAGS; do
     val="${!v}"
     val="${val//\"/\'}"
     val="${val//\`/}"
@@ -304,19 +301,12 @@ set +f
 
 if [ "${LOG_FILE}" = "1" ]; then
     mkdir -p logs
-    find logs -name '*.log' -mtime +7 -delete 2>/dev/null
     MODIFIED_STARTUP="${MODIFIED_STARTUP} -logfile logs/$(date +%Y-%m-%d_%H%M%S).log"
 fi
 
+# Carbon's own launch setup (doorstop, LD_PRELOAD, library path). wrapper.js runs this in bash.
 if [ "${FRAMEWORK}" = "carbon" ]; then
-    if [ -f carbon/tools/environment.sh ]; then
-        # Carbon's own launch setup (doorstop, LD_PRELOAD, library path). wrapper.js runs this in bash.
-        MODIFIED_STARTUP=". ./carbon/tools/environment.sh && ${MODIFIED_STARTUP}"
-    else
-        export TERM=xterm DOORSTOP_ENABLED=1
-        export DOORSTOP_TARGET_ASSEMBLY="$(pwd)/carbon/managed/Carbon.Preloader.dll"
-        MODIFIED_STARTUP="LD_PRELOAD=$(pwd)/libdoorstop.so ${MODIFIED_STARTUP}"
-    fi
+    MODIFIED_STARTUP=". ./carbon/tools/environment.sh && ${MODIFIED_STARTUP}"
 fi
 
 printf 'branch=%s\nframework=%s\n' "${BRANCH}" "${FRAMEWORK}" > "${STATE_FILE}"

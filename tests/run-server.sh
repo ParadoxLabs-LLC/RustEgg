@@ -67,7 +67,8 @@ docker run -d --name "${NAME}" --user 988:988 \
 
 start=$(date +%s)
 while true; do
-    if docker logs "${NAME}" 2>&1 | grep -q "Server startup complete"; then
+    docker logs "${NAME}" > "${WORK}/server.log" 2>&1
+    if grep -q "Server startup complete" "${WORK}/server.log"; then
         echo "Server booted in $(( $(date +%s) - start )) seconds."
         break
     fi
@@ -108,7 +109,9 @@ check "no egg errors" "\[egg\] ERROR" absent
 check "no download failures" "download failed" absent
 case "${VARS[FRAMEWORK]}" in
     oxide)  check "Oxide loaded" "Loading Oxide Core|Oxide.Rust|Loaded extension Rust" ;;
-    carbon) check "Carbon loaded" "Carbon" ;;
+    carbon)  # Ignore the egg's own "Installing Carbon" lines; only output from the game counts.
+        if grep -v '\[egg\]' "${WORK}/server.log" | grep -q "Carbon"; then echo "PASS: Carbon loaded"
+        else echo "FAIL: Carbon loaded"; annotate "FAIL: Carbon loaded" "${WORK}/server.log"; fail=1; fi ;;
 esac
 [ "${VARS[DISCORD_EXT]}" = "1" ]  && check "Discord extension installed" "Oxide.Ext.Discord.dll updated"
 [ "${VARS[RUSTEDIT_EXT]}" = "1" ] && check "RustEdit extension installed" "Oxide.Ext.RustEdit.dll updated"

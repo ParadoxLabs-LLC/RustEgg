@@ -21,7 +21,6 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
   Turning a toggle off removes that DLL on the next start. A failed download keeps the installed copy, and any file that is not a real DLL is rejected.
 - **FPS Limit** variable, passed as `+fps.limit`.
 - **Require TPM + Secure Boot** toggle (`server.useServerWideRequiredSystemConfig`).
-- **Pine Hosting compatibility:** `SRCDS_BETAID` is accepted as the branch.
 - **Optional log file** in `logs/`.
 - **Console filter** for Unity boot noise, line by line.
 - **Wrapper:** streams game output (no buffer limit), reconnects when RCON drops instead of killing the server, and saves on SIGTERM.
@@ -30,11 +29,11 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
 
 1. Make the package public, once: GitHub → ParadoxLabs-LLC → Packages → `rustegg` → Package settings → Change visibility → Public. Wings cannot pull a private image without registry credentials.
 2. In the panel, go to Admin → Nests → Import Egg and upload `egg-paradox-rust.json`.
-3. To move an existing server, change its egg under Admin → Servers → *server* → Startup, then restart it. The first start re-validates the game files.
+3. To move an existing server, change its egg under Admin → Servers → *server* → Startup, set Branch and Modding Framework to match what it ran before, then restart it. The first start re-validates the game files.
 
 ## Build
 
-GitHub Actions builds and pushes the image on every push to `main`, weekly, and on manual run (Actions → Build image → Run workflow).
+GitHub Actions (`.github/workflows/build.yml`) runs on every push to `main`, weekly, and on manual run. It first boots a real server with the new image the way Wings does (install script in `ghcr.io/pterodactyl/installers:debian`, then the image as uid 988 with a 100 MB `/tmp`) for vanilla/public, oxide/public with all extensions, and carbon/staging. Only if all three boot is `ghcr.io/paradoxlabs-llc/rustegg:latest` published.
 
 To build locally:
 
@@ -47,10 +46,6 @@ To regenerate the egg after changing `build-egg.js`:
 ```bash
 node build-egg.js ghcr.io/paradoxlabs-llc/rustegg:latest
 ```
-
-## Tests
-
-`.github/workflows/test.yml` builds the image and boots a real server the way Wings does: install script in `ghcr.io/pterodactyl/installers:debian`, then the image as uid 988 with a 100 MB `/tmp`. It runs vanilla/public, oxide/public with all extensions, and carbon/staging. Run it from Actions → Test server boot.
 
 ## Notes
 

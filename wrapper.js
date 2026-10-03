@@ -6,12 +6,7 @@ const fs = require("fs");
 const os = require("os");
 const { spawn } = require("child_process");
 
-let WebSocket;
-try {
-	WebSocket = require("ws");
-} catch (e) {
-	WebSocket = require("/opt/wrapper/node_modules/ws");
-}
+const WebSocket = require("ws");
 
 const startupCmd = process.argv.slice(2).join(" ");
 if (startupCmd.length < 1) {
@@ -166,6 +161,8 @@ function poll() {
 	});
 
 	ws.on("error", function () {
+		// An error on an open socket skips the close handler's switch back, so do it here too.
+		useRcon(false);
 		waiting = true;
 		console.log("Waiting for RCON to come up...");
 		setTimeout(poll, 5000);
