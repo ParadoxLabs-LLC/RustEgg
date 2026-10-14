@@ -2,12 +2,9 @@ name: Build image
 
 # Every client server pulls :latest, so the image is only published after a real
 # server has booted with it on every framework.
+# Manual only: run it from the Actions tab -> this workflow -> Run workflow.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: "0 6 * * 1" # weekly rebuild for Debian security updates
 
 permissions:
   contents: read
