@@ -33,7 +33,9 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
 
 ## Build
 
-GitHub Actions (`.github/workflows/build.yml`) runs on every push to `main`, weekly, and on manual run. It first boots a real server with the new image the way Wings does (install script in `ghcr.io/pterodactyl/installers:debian`, then the image as uid 988 with a 100 MB `/tmp`) for vanilla/public, oxide/public with all extensions, and carbon/staging. Only if all three boot is `ghcr.io/paradoxlabs-llc/rustegg:latest` published.
+GitHub Actions (`.github/workflows/build.yml`) runs on manual run only (Actions → Build image → Run workflow). It first boots a real server with the new image the way Wings does (install script in `ghcr.io/pterodactyl/installers:debian`, then the image as uid 988 with a 100 MB `/tmp`) for vanilla/public, oxide/public with all extensions, and carbon/staging. Only if all three boot is `ghcr.io/paradoxlabs-llc/rustegg:latest` published.
+
+Every publish also pushes `:<commit sha>`. To roll back a bad release, run the workflow with **rollback_to** set to the full SHA of the last good commit: `:latest` points back at that image without a rebuild, and each server gets it on its next restart.
 
 To build locally:
 
@@ -50,5 +52,6 @@ node build-egg.js ghcr.io/paradoxlabs-llc/rustegg:latest
 ## Notes
 
 - Every convar in **Additional Arguments** must start with `+`, for example `+server.pve true`.
+- Extensions are always the newest copy from their own sites (umod.org, GitHub, chaoscode.io), checked only for a DLL header, no checksum. Accepted risk: if one of those sites is compromised, its file reaches servers with that toggle on (inside each server's own container). Turn the toggle off on affected servers until it's fixed.
 - A `fps.limit` value saved in `server/<identity>/cfg/serverauto.cfg`, or set by a plugin, overrides the FPS Limit variable.
 - On wipe day Oxide can be released before or after the Rust update. If a server crashes after a wipe, set Framework Update to 0 until both match.
