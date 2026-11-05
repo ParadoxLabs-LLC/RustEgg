@@ -4,15 +4,15 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-11-05T14:19:38+00:00",
-    "name": "Rust (Paradox)",
+    "exported_at": "2026-11-05T14:23:20+00:00",
+    "name": "Rust (IronVault Host)",
     "author": "support@pterodactyl.io",
-    "description": "Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads, plus the Paradox Labs extension for licence holders.",
+    "description": "Rust dedicated server by IronVault Host (ironvaulthost.com). Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.",
     "features": [
         "steam_disk_space"
     ],
     "docker_images": {
-        "Paradox Rust": "ghcr.io/paradoxlabs-llc/rustegg:latest"
+        "IronVault Rust": "ghcr.io/paradoxlabs-llc/rustegg:latest"
     },
     "file_denylist": [],
     "startup": "./RustDedicated -batchmode +server.port {{SERVER_PORT}} +server.queryport {{QUERY_PORT}} +server.identity \\\"{{SERVER_IDENTITY}}\\\" +rcon.port {{RCON_PORT}} +rcon.web true +rcon.password \\\"{{RCON_PASS}}\\\" +server.hostname \\\"{{HOSTNAME}}\\\" +server.level \\\"{{LEVEL}}\\\" +server.description \\\"{{DESCRIPTION}}\\\" +server.url \\\"{{SERVER_URL}}\\\" +server.headerimage \\\"{{SERVER_IMG}}\\\" +server.logoimage \\\"{{SERVER_LOGO}}\\\" +server.maxplayers {{MAX_PLAYERS}} +server.saveinterval {{SAVEINTERVAL}} +app.port {{APP_PORT}} +fps.limit {{FPS_LIMIT}} $( [ \"${REQUIRE_TPM_SECURE_BOOT}\" = \"1\" ] && printf %s \"+server.useServerWideRequiredSystemConfig true\" ) $( [ -n \"${APP_PUBLIC_IP}\" ] && printf %s \"+app.publicip ${APP_PUBLIC_IP}\" ) $( [ -n \"${SERVER_TAGS}\" ] && printf %s \"+server.tags \\\"${SERVER_TAGS}\\\"\" ) $( [ -n \"${GAMEMODE}\" ] && printf %s \"+server.gamemode ${GAMEMODE}\" ) $( [ -z \"${MAP_URL}\" ] && printf %s \"+server.worldsize \\\"{{WORLD_SIZE}}\\\" +server.seed \\\"{{WORLD_SEED}}\\\"\" || printf %s \"+server.levelurl \\\"{{MAP_URL}}\\\"\" ) {{ADDITIONAL_ARGS}}",
@@ -268,16 +268,6 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
-            "field_type": "text"
-        },
-        {
-            "name": "Paradox Licence Keys",
-            "description": "Your Paradox Labs licence keys (comma separated) from paradoxlabs.dev. When set, Oxide.Ext.Paradox.dll is downloaded on every start. Leave empty to skip. Needs oxide or carbon.",
-            "env_variable": "PARADOX_LICENSE_KEYS",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string|max:1024",
             "field_type": "text"
         },
         {

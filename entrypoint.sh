@@ -7,7 +7,7 @@
 #      and the server will not start if that validate fails.
 #   3. Installs or updates Oxide or Carbon for that branch, removes the other framework's DLLs, and copies
 #      plugins/configs/data across once when switching between Oxide and Carbon (nothing is deleted).
-#   4. Downloads the enabled extensions (Discord, RustEdit, ChaosCode, Paradox).
+#   4. Downloads the enabled extensions (Discord, RustEdit, ChaosCode).
 #   5. Builds the startup line from the egg and hands it to wrapper.js.
 
 cd /home/container || exit 1
@@ -24,7 +24,10 @@ cat <<'BANNER'
   | || | | (_) | | | |  \ V / (_| | |_| | | |_  |  _  | (_) \__ \ |_
  |___|_|  \___/|_| |_|   \_/ \__,_|\__,_|_|\__| |_| |_|\___/|___/\__|
 BANNER
-echo -e "\033[0m\033[1;36m  Hosted by IronVault Host  |  https://ironvaulthost.com  |  Rust egg by Paradox Labs\033[0m"
+echo -e "\033[0m\033[1;36m  Rust server hosted by IronVault Host\033[0m"
+echo -e "  Website: https://ironvaulthost.com     Status:  https://ironvaulthost.com/status"
+echo -e "  Support: https://ironvaulthost.com/support   Discord: https://discord.gg/2KwF3KuGnn"
+echo -e "  Server:  ${HOSTNAME:-Rust Server}  |  ${BRANCH:-public} / ${FRAMEWORK:-vanilla}  |  ${SERVER_IP:-0.0.0.0}:${SERVER_PORT:-28015}"
 echo
 
 # Make internal Docker IP address available to processes.
@@ -287,30 +290,6 @@ install_dll "${DISCORD_EXT}"  Oxide.Ext.Discord.dll  "https://umod.org/extension
 install_dll "${RUSTEDIT_EXT}" Oxide.Ext.RustEdit.dll "https://github.com/k1lly0u/Oxide.Ext.RustEdit/raw/master/Oxide.Ext.RustEdit.dll" "${EXT_DIR}"
 install_dll "${CHAOS_EXT}"    Oxide.Ext.Chaos.dll    "https://oxide.chaoscode.io/Oxide.Ext.Chaos.dll" "${EXT_DIR}" "Oxide.Ext.Chaos/1.0"
 
-# Oxide.Ext.Paradox: served only to servers holding a live Paradox Labs licence, so it is
-# fetched with the keys instead of through install_dll. Empty keys = leave whatever is there
-# (the DLL also updates itself when its own updates are on).
-PARADOX_KEYS=$(echo "${PARADOX_LICENSE_KEYS:-}" | tr ',; ' '\n\n\n' | tr 'a-f' 'A-F' | grep -E '^([A-F0-9]{8}-){4}[A-F0-9]{8}$' | sort -u | head -20)
-if [ -n "${PARADOX_KEYS}" ]; then
-    if [ -z "${EXT_DIR}" ]; then
-        warn "Oxide.Ext.Paradox.dll skipped: it needs Modding Framework oxide or carbon."
-    else
-        mkdir -p "${EXT_DIR}"
-        body="{\"keys\":[$(printf '"%s",' ${PARADOX_KEYS} | sed 's/,$//')]}"
-        tmp="${DL_DIR}/Oxide.Ext.Paradox.dll"
-        if curl -fsSL --retry 2 --connect-timeout 20 --max-time 120 -A "RustEgg/1.0" \
-                -H "Content-Type: application/json" -d "${body}" -o "${tmp}" \
-                "https://paradoxlabs.dev/api/license/updates/extension" && [ "$(head -c 2 "${tmp}")" = "MZ" ]; then
-            mv -f "${tmp}" "${EXT_DIR}/Oxide.Ext.Paradox.dll"
-            log "Oxide.Ext.Paradox.dll updated."
-        else
-            rm -f "${tmp}"
-            warn "Oxide.Ext.Paradox.dll download failed (check your licence keys). Keeping any installed copy."
-        fi
-    fi
-elif [ -n "${PARADOX_LICENSE_KEYS:-}" ]; then
-    warn "Paradox Licence Keys has no valid key (format XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX)."
-fi
 
 rm -rf "${DL_DIR}"
 
