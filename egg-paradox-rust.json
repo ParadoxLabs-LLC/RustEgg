@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-11-05T14:23:20+00:00",
+    "exported_at": "2026-11-05T14:25:37+00:00",
     "name": "Rust (IronVault Host)",
     "author": "support@pterodactyl.io",
     "description": "Rust dedicated server by IronVault Host (ironvaulthost.com). Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.",
@@ -288,6 +288,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Wipe",
+            "description": "Wipe on the next start. none = no wipe, map = delete the map and saves (keeps blueprints), full = map, saves and blueprints. Runs once: restarts after that do not wipe again. Set back to none after the wipe so the next one can run.",
+            "env_variable": "WIPE",
+            "default_value": "none",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:none,map,full",
             "field_type": "text"
         },
         {

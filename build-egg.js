@@ -100,6 +100,7 @@ const egg = {
     v('Require TPM + Secure Boot', 'Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.', 'REQUIRE_TPM_SECURE_BOOT', '0', 'required|boolean'),
 
     v('Log File', 'Also save the console output to logs/<date>.log, one file per start. 1 = on, 0 = off.', 'LOG_FILE', '0', 'required|boolean'),
+    v('Wipe', 'Wipe on the next start. none = no wipe, map = delete the map and saves (keeps blueprints), full = map, saves and blueprints. Runs once: restarts after that do not wipe again. Set back to none after the wipe so the next one can run.', 'WIPE', 'none', 'required|string|in:none,map,full'),
 
     v('Query Port', 'Server Query Port. Can\'t be the same as Game\'s primary port.', 'QUERY_PORT', '27017', 'required|integer', false),
     v('RCON Port', 'Port for RCON connections.', 'RCON_PORT', '28016', 'required|integer', false),

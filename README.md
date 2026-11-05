@@ -20,6 +20,7 @@ Egg: [`egg-paradox-rust.json`](egg-paradox-rust.json)
 
   Turning a toggle off removes that DLL on the next start. A failed download keeps the installed copy, and any file that is not a real DLL is rejected.
 - **IronVault Host banner** at the top of every start: website, status, support and Discord links, plus the server name, branch/framework and address.
+- **Wipe** variable (none / map / full): wipes once on the next start, then leaves the server alone until it is set back to none.
 - **FPS Limit** variable, passed as `+fps.limit`.
 - **Require TPM + Secure Boot** toggle (`server.useServerWideRequiredSystemConfig`).
 - **Optional log file:** the console output is also saved to `logs/<date>.log`. Rust's own `-logfile` is not used, because it makes every RCON line show twice.

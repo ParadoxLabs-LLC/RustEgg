@@ -328,6 +328,36 @@ if [ "${FRAMEWORK}" = "carbon" ]; then
     MODIFIED_STARTUP=". ./carbon/tools/environment.sh && ${MODIFIED_STARTUP}"
 fi
 
+########
+# Wipe #
+########
+# WIPE = none | map | full. Runs once per change: .egg_wipe remembers it was done, so later
+# restarts do not wipe again. Setting it back to none clears that, ready for the next wipe.
+WIPE="${WIPE:-none}"
+WIPE_DIR="server/${SERVER_IDENTITY:-rust}"
+case "${WIPE}" in
+    none) rm -f .egg_wipe ;;
+    map|full)
+        if [ -f .egg_wipe ]; then
+            log "Wipe (${WIPE}) already done. Set Wipe to none, then back, to wipe again."
+        else
+            if [ -d "${WIPE_DIR}" ]; then
+                find "${WIPE_DIR}" -maxdepth 1 -type f \( -name '*.sav' -o -name '*.sav.*' -o -name '*.map' \) -delete
+                if [ "${WIPE}" = "full" ]; then
+                    find "${WIPE_DIR}" -maxdepth 1 -type f -name 'player.blueprints.*' -delete
+                    log "Full wipe done: map, saves and blueprints removed from ${WIPE_DIR}."
+                else
+                    log "Map wipe done: map and saves removed from ${WIPE_DIR}. Blueprints kept."
+                fi
+            else
+                log "Wipe (${WIPE}): ${WIPE_DIR} does not exist yet, nothing to remove."
+            fi
+            echo "${WIPE} $(date -u +%FT%TZ)" > .egg_wipe
+        fi
+        ;;
+    *) warn "Wipe '${WIPE}' is not valid. Use none, map or full. Not wiping." ;;
+esac
+
 printf 'branch=%s\nframework=%s\n' "${BRANCH}" "${FRAMEWORK}" > "${STATE_FILE}"
 
 log "Framework: ${FRAMEWORK} | Branch: ${BRANCH}"
