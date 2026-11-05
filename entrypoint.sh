@@ -18,13 +18,13 @@ fail() { echo -e "\033[1;31m[egg] ERROR:\033[0m $*"; exit 1; }
 
 echo -e "\033[1;35m"
 cat <<'BANNER'
-  ____                     _              _          _
- |  _ \ __ _ _ __ __ _  __| | _____  __  | |    __ _| |__  ___
- | |_) / _` | '__/ _` |/ _` |/ _ \ \/ /  | |   / _` | '_ \/ __|
- |  __/ (_| | | | (_| | (_| | (_) >  <   | |__| (_| | |_) \__ \
- |_|   \__,_|_|  \__,_|\__,_|\___/_/\_\  |_____\__,_|_.__/|___/
+  ___                 __     __          _ _     _   _           _
+ |_ _|_ __ ___  _ __  \ \   / /_ _ _   _| | |_  | | | | ___  ___| |_
+  | || '__/ _ \| '_ \  \ \ / / _` | | | | | __| | |_| |/ _ \/ __| __|
+  | || | | (_) | | | |  \ V / (_| | |_| | | |_  |  _  | (_) \__ \ |_
+ |___|_|  \___/|_| |_|   \_/ \__,_|\__,_|_|\__| |_| |_|\___/|___/\__|
 BANNER
-echo -e "\033[0m\033[1;36m  Rust egg by Paradox Labs  |  https://paradoxlabs.dev  |  https://discord.paradoxlabs.dev\033[0m"
+echo -e "\033[0m\033[1;36m  Hosted by IronVault Host  |  https://ironvaulthost.com  |  Rust egg by Paradox Labs\033[0m"
 echo
 
 # Make internal Docker IP address available to processes.
