@@ -4,10 +4,10 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2026-10-03T04:53:13+00:00",
+    "exported_at": "2026-11-05T14:19:38+00:00",
     "name": "Rust (Paradox)",
     "author": "support@pterodactyl.io",
-    "description": "Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.",
+    "description": "Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads, plus the Paradox Labs extension for licence holders.",
     "features": [
         "steam_disk_space"
     ],
@@ -268,6 +268,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Paradox Licence Keys",
+            "description": "Your Paradox Labs licence keys (comma separated) from paradoxlabs.dev. When set, Oxide.Ext.Paradox.dll is downloaded on every start. Leave empty to skip. Needs oxide or carbon.",
+            "env_variable": "PARADOX_LICENSE_KEYS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:1024",
             "field_type": "text"
         },
         {

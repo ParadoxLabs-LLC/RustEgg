@@ -59,7 +59,7 @@ const egg = {
   exported_at: new Date().toISOString().replace(/\.\d+Z$/, '+00:00'),
   name: 'Rust (Paradox)',
   author: 'support@pterodactyl.io',
-  description: 'Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads.',
+  description: 'Rust dedicated server. Supports the public and staging branches, Oxide or Carbon with the matching build for each branch, and automatic Discord, RustEdit and ChaosCode downloads, plus the Paradox Labs extension for licence holders.',
   features: ['steam_disk_space'],
   docker_images: { 'Paradox Rust': image },
   file_denylist: [],
@@ -97,6 +97,7 @@ const egg = {
     v('Discord Extension', 'Oxide.Ext.Discord. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'DISCORD_EXT', '0', 'required|boolean'),
     v('RustEdit Extension', 'Oxide.Ext.RustEdit, needed by many RustEdit custom maps. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'RUSTEDIT_EXT', '0', 'required|boolean'),
     v('ChaosCode Extension', 'Oxide.Ext.Chaos, used by ChaosCode plugins. 1 = install and keep updated, 0 = remove (also removes a copy you installed by hand). Needs oxide or carbon.', 'CHAOS_EXT', '0', 'required|boolean'),
+    v('Paradox Licence Keys', 'Your Paradox Labs licence keys (comma separated) from paradoxlabs.dev. When set, Oxide.Ext.Paradox.dll is downloaded on every start. Leave empty to skip. Needs oxide or carbon.', 'PARADOX_LICENSE_KEYS', '', 'nullable|string|max:1024'),
     v('Require TPM + Secure Boot', 'Only allow players whose PC has TPM 2.0 and Secure Boot on. Marks the server as Secure in the server list. 1 = on, 0 = off.', 'REQUIRE_TPM_SECURE_BOOT', '0', 'required|boolean'),
 
     v('Log File', 'Also save the console output to logs/<date>.log, one file per start. 1 = on, 0 = off.', 'LOG_FILE', '0', 'required|boolean'),
